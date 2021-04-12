@@ -43,3 +43,13 @@ combined_df.sort_values(by=['customer_id', 'transaction_date'], inplace=True, as
 combined_df['last_transaction'] = ~combined_df.duplicated(subset=['customer_id'], keep='last')
 combined_df.sort_values(by=['customer_id', 'transaction_date'], inplace=True)
 
+
+# %%
+
+# =============================================================================
+# Running account balance for each customer
+# =============================================================================
+combined_df['running_account_total'] = combined_df.groupby(['customer_id'])['amount'].cumsum() + combined_df['start_balance']
+
+
+# %%
