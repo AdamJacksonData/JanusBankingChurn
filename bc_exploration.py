@@ -53,3 +53,9 @@ combined_df['running_account_total'] = combined_df.groupby(['customer_id'])['amo
 
 
 # %%
+# =============================================================================
+# plotting
+# =============================================================================
+
+df_sample = combined_df.sample(frac=0.001)
+pd.plotting.scatter_matrix(df_sample.drop(columns='last_transaction'), c=df_sample['last_transaction'].map({True:'blue', False:'pink'}))
