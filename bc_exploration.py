@@ -23,7 +23,12 @@ transaction_raw = pd.read_csv(transactions_file_path)
 
 customer_raw['state'].replace(to_replace={'NY':'New York','TX':'Texas','CALIFORNIA':'California','UNK':'Nebraska','MASS':'Massachusetts'},inplace=True)
 
+
+
 combined_df = pd.merge(customer_raw, transaction_raw, on='customer_id', how='left')
+
+for col in ['dob','creation_date','date','transaction_date']:
+    combined_df[col] = pd.to_datetime(combined_df[col])
 
 
 # %%
