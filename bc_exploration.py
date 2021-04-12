@@ -25,6 +25,9 @@ customer_raw['state'].replace(to_replace={'NY':'New York','TX':'Texas','CALIFORN
 
 combined_df = pd.merge(customer_raw, transaction_raw, on='customer_id', how='left')
 
+# dtype to date
+for col in ['transaction_date', 'creation_date', 'dob', 'date']:
+    combined_df[col] = pd.to_datetime(combined_df[col])
 
 # %%
 
