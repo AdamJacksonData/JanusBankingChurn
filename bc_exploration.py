@@ -53,9 +53,33 @@ combined_df['running_account_total'] = combined_df.groupby(['customer_id'])['amo
 
 
 # %%
+
+neg_sb_df = combined_df[combined_df['start_balance']<0]
+large_sb_df = combined_df[combined_df['start_balance']>2.5e8]
+
+rows_to_drop = neg_sb_df['customer_id'].unique()[0]
+large_rows_to_drop = large_sb_df['customer_id'].unique()
+
+combined_df.drop(combined_df[combined_df['customer_id']==rows_to_drop].index, inplace=True)
+combined_df.drop(combined_df[combined_df['start_balance']>2.5e8].index, inplace=True)
+
+# %%
+
+high_amount = combined_df[combined_df['amount']>2.5e8]
+combined_df.drop(combined_df[combined_df['amount']>2.5e8].index, inplace=True)
+low_amount = combined_df[combined_df['amount']<-1e8]
+combined_df.drop(combined_df[combined_df['amount']<-1e8].index, inplace=True)
+low_amount = combined_df[combined_df['running_account_total']<-1e8]
+high_amount = combined_df[combined_df['running_account_total']>2.5e8]
+combined_df.drop(combined_df[(combined_df['running_account_total']>2.5e8) | (combined_df['running_account_total']<-1e8)].index, inplace=True)
+df_stats = combined_df.describe()
+
+# %%
 # =============================================================================
 # plotting
 # =============================================================================
 
 df_sample = combined_df.sample(frac=0.001)
 pd.plotting.scatter_matrix(df_sample.drop(columns='last_transaction'), c=df_sample['last_transaction'].map({True:'blue', False:'pink'}))
+
+
