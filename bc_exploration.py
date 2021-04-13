@@ -15,8 +15,8 @@ from tqdm import tqdm
 
 # %%
 
-customers_file_path = os.getcwd() + r'/csvs/customers_tm1_e.csv'
-transactions_file_path = os.getcwd() + r'/csvs/transactions_tm1_e.csv'
+customers_file_path = os.getcwd() + r'/customers_tm1_e.csv'
+transactions_file_path = os.getcwd() + r'/transactions_tm1_e.csv'
 customer_raw = pd.read_csv(customers_file_path)
 transaction_raw = pd.read_csv(transactions_file_path)
 
@@ -155,7 +155,15 @@ portfolio_df['inflation'] = t10yie_df
 
 portfolio_df.rename({'start_balance':'monthly_income_from_account_openings', 'amount':'monthly_transactions_and_account_closures','total_monthly_change':'monthly_portfolio_balance_change'}, axis=1, inplace=True)
 portfolio_df[['portfolio_balance', 'monthly_income_from_account_openings', 'monthly_transactions_and_account_closures', 'monthly_portfolio_balance_change', 'zero']].plot(xlabel='Date', ylabel='Portfolio balence in USD', style=['-','-','-','-','--'])
-portfolio_df[['portfolio_balance']].plot(xlabel='Date', ylabel='Portfolio balence in USD')
+
+portfolio_df[['portfolio_balance']].plot(fontsize=20)
+plt.xlabel('Date', fontsize=26)
+plt.ylabel('Portfolio balence in USD (*1e7)', fontsize=26)
+plt.legend(fontsize=22)
+
 portfolio_df[['portfolio_balance', 'university_of_michigan_consumer_sentiment_index', 'unemployment_rate', 'effective_federal_funds_rate', 'gdp', 'inflation']].plot(xlabel='Date', subplots=True)
 
+
+portfolio_df[['portfolio_balance', 'university_of_michigan_consumer_sentiment_index', 'unemployment_rate', 'effective_federal_funds_rate', 'gdp', 'inflation']].plot(subplots=True)
+plt.xlabel('Date', fontsize=20)
 
