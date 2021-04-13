@@ -27,7 +27,7 @@ combined_df = pd.merge(customer_raw, transaction_raw, on='customer_id', how='lef
 
 # dtype to date
 for col in ['transaction_date', 'creation_date', 'dob', 'date']:
-    combined_df[col] = pd.to_datetime(combined_df[col])#.dt.strftime('%Y-%m-%d')
+    combined_df[col] = pd.to_datetime(combined_df[col])
 
 # %%
 
@@ -128,5 +128,58 @@ ax.set_title('Customer Churn Rate per Month')
 df_sample = combined_df.sample(frac=0.001)
 
 pd.plotting.scatter_matrix(df_sample.drop(columns='last_transaction'), c=df_sample['last_transaction'].map({True:'blue', False:'pink'}))
+
+# %%
+# dtype to period
+for col in ['creation_date', 'dob', 'date']:
+    combined_df[col] = pd.to_datetime(combined_df[col]).dt.to_period('D')
+for col in ['transaction_date']:
+    combined_df[col] = pd.to_datetime(combined_df[col]).dt.to_period('M')
+
+# %%
+# =============================================================================
+# Code aggregating account amounts, deposits and withdrawals so there is only one entry per account per month.
+# combo_agg_df is the updated version of combined_df
+# =============================================================================
+agg_df = combined_df[['customer_id', 'transaction_date', 'amount', 'deposit', 'withdrawal']].groupby(['customer_id','transaction_date']).sum()
+agg_df.reset_index(inplace=True, level=['customer_id'])
+agg_df.reset_index(inplace=True)
+
+cols_to_keep = ['customer_id', 'dob', 'state', 'start_balance', 'creation_date', 'date',
+       'account_id','transaction_date']
+
+combo_agg_df = pd.merge(agg_df, combined_df[cols_to_keep], on=['customer_id','transaction_date'], how='inner')
+combo_agg_df['last_transaction'] = ~combo_agg_df.duplicated(subset=['customer_id'], keep='last')
+combo_agg_df.drop_duplicates(subset=['customer_id', 'transaction_date'], keep='last', inplace=True)
+
+# %%
+combo_agg_df['running_account_total'] = combo_agg_df.groupby(['customer_id'])['amount'].cumsum() + combo_agg_df['start_balance']
+
+combo_agg_df['tenure'] = np.ceil((combo_agg_df['date'] - combo_agg_df['creation_date'])/np.timedelta64(1,'M'))
+
+combo_agg_df.drop(columns='date', inplace=True)
+
+# %%
+# =============================================================================
+# Code to check if any customers have multiple accounts - they don't
+# =============================================================================
+'''
+for i in tqdm(combo_agg_df['customer_id'].unique()):
+    if (len(combo_agg_df[combo_agg_df['customer_id']==i]['account_id'].unique())>1):
+        print(i)
+'''
+# %%
+# =============================================================================
+# Filling unknown starting balances with the mean starting balance in the dataset
+# =============================================================================
+no_start_bal = combo_agg_df[combo_agg_df['start_balance'].isna()]
+no_start_bal_ids = no_start_bal['customer_id'].unique()
+combo_agg_df.fillna(value=(combo_agg_df['start_balance'].dropna()).mean(), inplace=True)
+agg_df_stats = combo_agg_df.describe()
+
+# %%
+agg_df_sample = combo_agg_df.sample(frac=0.001)
+
+pd.plotting.scatter_matrix(agg_df_sample.drop(columns='last_transaction'), c=agg_df_sample['last_transaction'].map({True:'blue', False:'pink'}))
 
 
