@@ -76,6 +76,45 @@ df_stats = combined_df.describe()
 
 # %%
 # =============================================================================
+# churn rate
+# =============================================================================
+
+churn_df = combined_df[combined_df['last_transaction']==True]
+date_list = sorted(set(combined_df['date']))
+lasttran_monthly = churn_df['date'].value_counts()
+lasttran_monthly = pd.DataFrame(lasttran_monthly)
+lasttran_monthly = lasttran_monthly.reset_index().sort_values(['index'])
+lasttran_monthly = lasttran_monthly.rename(columns={'index':'date', 'date':'no_lt'}).set_index(['date'])
+lasttran_monthly = lasttran_monthly.shift(periods=1).dropna().reset_index()
+
+
+total_customers = []
+for i in date_list:
+    total_customer = combined_df[combined_df['date']==i]
+    total_customers.append(len(total_customer['customer_id']))
+
+total_customers.remove(total_customers[160])
+
+lasttran_monthly.insert(2,'total customers', total_customers)
+lasttran_monthly['churn rate %'] = (lasttran_monthly['no_lt']/lasttran_monthly['total customers'])*100
+
+churn_data_monthly = lasttran_monthly
+
+fig, ax = plt.subplots()
+ax.plot(churn_data_monthly['date'], churn_data_monthly['no_lt'], marker='o')
+ax.set_xlabel('Date')
+ax.set_ylabel('Customers Churned')
+ax.set_title('Customer Churn per Month')
+
+fig, ax = plt.subplots()
+ax.plot(churn_data_monthly['date'], churn_data_monthly['churn rate %'], marker='o')
+ax.set_xlabel('Date')
+ax.set_ylabel('Churn Rate %')
+ax.set_title('Customer Churn Rate per Month')
+
+
+# %%
+# =============================================================================
 # plotting
 # =============================================================================
 
