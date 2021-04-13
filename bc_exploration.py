@@ -60,7 +60,8 @@ gdp_df = gdp_df[start_date:end_date]
 t10yie_df = pd.read_csv(r'./csvs/T10YIE.csv')
 t10yie_df['DATE'] = pd.to_datetime(t10yie_df['DATE'])
 t10yie_df.set_index('DATE', inplace=True)
-t10yie_df['T10YIE'] = pd_to_numeric(t10yie_df['T10YIE'])
+t10yie_df = t10yie_df[t10yie_df['T10YIE'] != '.']
+t10yie_df['T10YIE'] = pd.to_numeric(t10yie_df['T10YIE'])
 t10yie_df = t10yie_df.resample('M').mean()
 t10yie_df = t10yie_df[start_date:end_date]
 
@@ -145,6 +146,12 @@ portfolio_df.drop(index=pd.to_datetime('2020-05-31 00:00:00'), inplace=True)
 portfolio_df['total_monthly_change'] = portfolio_df['start_balance'] + portfolio_df['amount']
 portfolio_df['portfolio_balance']    = portfolio_df['total_monthly_change'].cumsum()
 portfolio_df['zero'] = np.zeros((160,1))
+
+portfolio_df['university_of_michigan_consumer_sentiment_index'] = umcsent_df
+portfolio_df['unemployment_rate'] = unrate_df
+portfolio_df['effective_federal_funds_rate'] = dff_df
+portfolio_df['gdp'] = gdp_df
+portfolio_df['inflation'] = t10yie_df
 
 portfolio_df.rename({'start_balance':'monthly_income_from_account_openings', 'amount':'monthly_transactions_and_account_closures','total_monthly_change':'monthly_portfolio_balance_change'}, axis=1, inplace=True)
 #portfolio_df[['portfolio_balance', 'monthly_income_from_account_openings', 'monthly_transactions_and_account_closures', 'monthly_portfolio_balance_change', 'zero']].plot(xlabel='Date', ylabel='Portfolio balence in USD', style=['-','-','-','-','--'])
