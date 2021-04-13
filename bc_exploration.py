@@ -21,13 +21,13 @@ customer_raw = pd.read_csv(customers_file_path)
 transaction_raw = pd.read_csv(transactions_file_path)
 # %%
 
-customer_raw['state'].replace(to_replace={'NY':'New York','TX':'Texas','CALIFORNIA':'California','UNK':'Nebraska','MASS':'Massachusetts'},inplace=True)
+customer_raw['state'].replace(to_replace={'NY':'New York','TX':'Texas','CALIFORNIA':'California','UNK':'Nebraska','MASS':'Massachusetts', 'District of Columbia':'Washington'},inplace=True)
 
 combined_df = pd.merge(customer_raw, transaction_raw, on='customer_id', how='left')
 
 # dtype to date
 for col in ['transaction_date', 'creation_date', 'dob', 'date']:
-    combined_df[col] = pd.to_datetime(combined_df[col])
+    combined_df[col] = pd.to_datetime(combined_df[col])#.dt.strftime('%Y-%m-%d')
 
 # %%
 
@@ -80,6 +80,7 @@ df_stats = combined_df.describe()
 # =============================================================================
 
 df_sample = combined_df.sample(frac=0.001)
+
 pd.plotting.scatter_matrix(df_sample.drop(columns='last_transaction'), c=df_sample['last_transaction'].map({True:'blue', False:'pink'}))
 
 
