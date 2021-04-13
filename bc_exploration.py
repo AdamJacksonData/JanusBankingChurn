@@ -91,10 +91,16 @@ pd.plotting.scatter_matrix(df_sample.drop(columns='last_transaction'), c=df_samp
 # =============================================================================
 customer_raw.drop(customer_raw[abs(customer_raw['start_balance'])>1e7].index, inplace=True)
 
-temp_df = customer_raw[['start_balance', 'creation_date']]
+temp_df = customer_raw[['new_accounts_open', 'creation_date']]
 temp_df['creation_date'] = pd.to_datetime(temp_df['creation_date'])
 temp_df = temp_df.set_index('creation_date')
 temp_df_m = temp_df.resample('M').sum()
 
 port_df = combined_df.set_index('transaction_date')[['amount', 'running_account_total', 'last_transaction']]
 port_df['amount'][port_df['last_transaction'] == True] = -port_df['running_account_total']
+port_df_m = port_df[['amount']].resample('M').sum()
+
+portfolio_df = pd.merge(temp_df_m, port_df_m, left_index=True, right_index=True)
+portfolio_df.drop(index=pd.to_datetime('2020-05-31 00:00:00'), inplace=True)
+portfolio_df['total_monthly_change'] = portfolio_df['new_accounts_open' + portfolio_df['amount']
+portfolio_df['portfolio_balance']    = portfolio_df['total_monthly_change'].cumsum()
