@@ -69,10 +69,11 @@ high_amount = combined_df[combined_df['amount']>2.5e8]
 combined_df.drop(combined_df[combined_df['amount']>2.5e8].index, inplace=True)
 low_amount = combined_df[combined_df['amount']<-1e8]
 combined_df.drop(combined_df[combined_df['amount']<-1e8].index, inplace=True)
-low_amount = combined_df[combined_df['running_account_total']<-1e8]
-high_amount = combined_df[combined_df['running_account_total']>2.5e8]
-combined_df.drop(combined_df[(combined_df['running_account_total']>2.5e8) | (combined_df['running_account_total']<-1e8)].index, inplace=True)
+#low_amount = combined_df[combined_df['running_account_total']<-1e8]
+#high_amount = combined_df[combined_df['running_account_total']>2.5e8]
+#combined_df.drop(combined_df[(combined_df['running_account_total']>2.5e8) | (combined_df['running_account_total']<-1e8)].index, inplace=True)
 df_stats = combined_df.describe()
+
 
 # %%
 # =============================================================================
@@ -84,3 +85,16 @@ df_sample = combined_df.sample(frac=0.001)
 pd.plotting.scatter_matrix(df_sample.drop(columns='last_transaction'), c=df_sample['last_transaction'].map({True:'blue', False:'pink'}))
 
 
+# %%
+# =============================================================================
+# portfolio analysis
+# =============================================================================
+customer_raw.drop(customer_raw[abs(customer_raw['start_balance'])>1e7].index, inplace=True)
+
+temp_df = customer_raw[['start_balance', 'creation_date']]
+temp_df['creation_date'] = pd.to_datetime(temp_df['creation_date'])
+temp_df = temp_df.set_index('creation_date')
+temp_df_m = temp_df.resample('M').sum()
+
+port_df = combined_df.set_index('transaction_date')[['amount', 'running_account_total', 'last_transaction']]
+port_df['amount'][port_df['last_transaction'] == True] = -port_df['running_account_total']

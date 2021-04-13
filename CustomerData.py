@@ -29,10 +29,10 @@ def calculate_age(birth_date):
 # %%
 # Merge Last Transaction Date to customer
 
-last_path = r'C:\Users\MarkHughes\Documents\last_dates.csv'
+last_path = r'last_dates.csv'
 last_date = pd.read_csv(last_path)
 
-cust_path = r'C:\Users\MarkHughes\JanusBankingChurn\customers_tm1_e.csv'
+cust_path = r'customers_tm1_e.csv'
 customers = pd.read_csv(cust_path)
 
 last_date.drop(columns='Unnamed: 0', inplace=True)
