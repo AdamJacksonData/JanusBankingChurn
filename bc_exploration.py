@@ -15,11 +15,54 @@ from tqdm import tqdm
 
 # %%
 
-customers_file_path = os.getcwd() + r'/customers_tm1_e.csv'
-transactions_file_path = os.getcwd() + r'/transactions_tm1_e.csv'
+customers_file_path = os.getcwd() + r'csvs/customers_tm1_e.csv'
+transactions_file_path = os.getcwd() + r'csvs/transactions_tm1_e.csv'
 customer_raw = pd.read_csv(customers_file_path)
 transaction_raw = pd.read_csv(transactions_file_path)
 
+# %%
+# =============================================================================
+# Load macroeconomics data
+# =============================================================================
+start_date = pd.to_datetime('2007-01-31')
+end_date   = pd.to_datetime('2020-04-30')
+
+# University of Michigan Consumer Sentiment Index
+umcsent_df = pd.read_csv(r'./csvs/UMCSENT.csv')
+umcsent_df['DATE'] = pd.to_datetime(umcsent_df['DATE'])
+umcsent_df.set_index('DATE', inplace=True)
+umcsent_df = umcsent_df.resample('M').mean()
+umcsent_df = umcsent_df[start_date:end_date]
+
+# Unemployment Rate
+unrate_df = pd.read_csv(r'./csvs/UNRATE.csv')
+unrate_df['DATE'] = pd.to_datetime(unrate_df['DATE'])
+unrate_df.set_index('DATE', inplace=True)
+unrate_df = unrate_df.resample('M').mean()
+unrate_df = unrate_df[start_date:end_date]
+
+#Effective Federal Funds Rate
+dff_df = pd.read_csv(r'./csvs/DFF.csv')
+dff_df['DATE'] = pd.to_datetime(dff_df['DATE'])
+dff_df.set_index('DATE', inplace=True)
+dff_df = dff_df.resample('M').mean()
+dff_df = dff_df[start_date:end_date]
+
+# Gross Domestic Product
+gdp_df = pd.read_csv(r'./csvs/GDP.csv')
+gdp_df['DATE'] = pd.to_datetime(gdp_df['DATE'])
+gdp_df.set_index('DATE', inplace=True)
+gdp_df = gdp_df.resample('M').mean()
+gdp_df = gdp_df.interpolate()
+gdp_df = gdp_df[start_date:end_date]
+
+# Inflation rate
+t10yie_df = pd.read_csv(r'./csvs/T10YIE.csv')
+t10yie_df['DATE'] = pd.to_datetime(t10yie_df['DATE'])
+t10yie_df.set_index('DATE', inplace=True)
+t10yie_df['T10YIE'] = pd_to_numeric(t10yie_df['T10YIE'])
+t10yie_df = t10yie_df.resample('M').mean()
+t10yie_df = t10yie_df[start_date:end_date]
 
 # %%
 customer_raw['state'].replace(to_replace={'NY':'New York','TX':'Texas','CALIFORNIA':'California','UNK':'Nebraska','MASS':'Massachusetts', 'District of Columbia':'Washington'},inplace=True)
@@ -101,7 +144,10 @@ portfolio_df = pd.merge(temp_df_m, port_df_m, left_index=True, right_index=True)
 portfolio_df.drop(index=pd.to_datetime('2020-05-31 00:00:00'), inplace=True)
 portfolio_df['total_monthly_change'] = portfolio_df['start_balance'] + portfolio_df['amount']
 portfolio_df['portfolio_balance']    = portfolio_df['total_monthly_change'].cumsum()
-portfolio_df['zeros'] = np.zeros((160,1))
+portfolio_df['zero'] = np.zeros((160,1))
+
+portfolio_df.rename({'start_balance':'monthly_income_from_account_openings', 'amount':'monthly_transactions_and_account_closures','total_monthly_change':'monthly_portfolio_balance_change'}, axis=1, inplace=True)
+#portfolio_df[['portfolio_balance', 'monthly_income_from_account_openings', 'monthly_transactions_and_account_closures', 'monthly_portfolio_balance_change', 'zero']].plot(xlabel='Date', ylabel='Portfolio balence in USD', style=['-','-','-','-','--'])
+portfolio_df[['portfolio_balance']].plot(xlabel='Date', ylabel='Portfolio balence in USD')
 
 
-portfolio_df[['portfolio_balance', 'start_balance', 'amount', 'total_monthly_change', 'zeros']].plot(xlabel='Date', ylabel='Portfolio balence in USD')
