@@ -57,7 +57,7 @@ matched_non_churners = train_val_data[train_val_data['churn']==0].sample(98764, 
 train_val_data_matched = churners.append(matched_non_churners)
 # %%
 
-train_data, val_data = train_test_split(train_val_data_matched, test_size=0.2, stratify=train_val_data['churn'], shuffle=True, random_state=123)
+train_data, val_data = train_test_split(train_val_data_matched, test_size=0.2, stratify=train_val_data_matched['churn'], shuffle=True, random_state=123)
 
 X_train = train_data.drop(columns='churn')
 y_train = train_data['churn']
@@ -88,7 +88,13 @@ val_acc = accuracy_score(y_val, y_hat_val)
 feature_importances = model.feature_importances_
 
 # %%
+# =============================================================================
+# Plotting confusion matrix
+# =============================================================================
 
+plot_confusion_matrix(model, X_val, y_val)
+
+# %%
 # =============================================================================
 # Plotting ROC curve
 # =============================================================================
