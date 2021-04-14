@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from tqdm import tqdm
 
 # %%
@@ -161,9 +162,14 @@ plt.xlabel('Date', fontsize=26)
 plt.ylabel('Portfolio balence in USD (*1e7)', fontsize=26)
 plt.legend(fontsize=22)
 
-portfolio_df[['portfolio_balance', 'university_of_michigan_consumer_sentiment_index', 'unemployment_rate', 'effective_federal_funds_rate', 'gdp', 'inflation']].plot(xlabel='Date', subplots=True)
+#portfolio_df[['portfolio_balance', 'university_of_michigan_consumer_sentiment_index', 'unemployment_rate', 'effective_federal_funds_rate', 'gdp', 'inflation']].plot(xlabel='Date', subplots=True)
+font = {'family' : 'normal',
+        'weight' : 'normal',
+        'size'   : 16}
 
+matplotlib.rc('font', **font)
 
-portfolio_df[['portfolio_balance', 'university_of_michigan_consumer_sentiment_index', 'unemployment_rate', 'effective_federal_funds_rate', 'gdp', 'inflation']].plot(subplots=True)
-plt.xlabel('Date', fontsize=20)
+portfolio_df[['portfolio_balance', 'university_of_michigan_consumer_sentiment_index', 'unemployment_rate', 'effective_federal_funds_rate', 'gdp', 'inflation']].plot(subplots=True, fontsize=18)
+plt.xlabel('Date', fontsize=22)
+
 
