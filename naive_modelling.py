@@ -20,6 +20,9 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_confusion_matrix
 from sklearn.metrics import roc_curve, roc_auc_score, plot_roc_curve, plot_precision_recall_curve
 from sklearn.calibration import calibration_curve
+import json
+import requests
+from bs4 import BeautifulSoup
 
 # %%
 
@@ -62,16 +65,41 @@ raw_data['dob'] = pd.to_datetime(raw_data['dob'])
 raw_data['Age'] = (raw_data['end_date'] - raw_data['dob'])/np.timedelta64(1,'Y')
 raw_data['Age'] = raw_data['Age'].apply(np.floor)
 
+
+# %%
+
+r = requests.get(r'https://inkplant.com/code/state-latitudes-longitudes')
+
+soup = BeautifulSoup(r.text, 'html.parser')
+
+# %%
+tag        = 'table'
+attributes = {'class':'table table-hover'}
+table_soup = soup.find(tag, attributes)
+
+table_data = []
+for row in table_soup.find_all('tr'):
+    row_text = [e.text.strip() for e in row.find_all('td')]
+    table_data.append(row_text)
+    
+table_cols = table_data[0]
+table_content = table_data[1:]
+
+location_df = pd.DataFrame(table_content, columns=table_cols)
+
 preprocessed_df = raw_data.drop(columns=['customer_id', 'deposit', 'withdrawal', 'dob', 'creation_date', 'account_id', 'end_date'])
-#preprocessed_df = preprocessed_df.drop(columns='transaction_date')
 
-dummies = pd.get_dummies(preprocessed_df['state'], drop_first=False)
-states = sorted(preprocessed_df['state'].unique())
 
-for i in range(len(states)):
-    preprocessed_df[states[i]] = dummies[dummies.columns[i]]
+preprocessed_df = pd.merge(preprocessed_df, location_df, left_on='state', right_on='State', how='left')
 
-preprocessed_df = preprocessed_df.drop(columns='state')
+
+#dummies = pd.get_dummies(preprocessed_df['state'], drop_first=False)
+#states = sorted(preprocessed_df['state'].unique())
+
+#for i in range(len(states)):
+#    preprocessed_df[states[i]] = dummies[dummies.columns[i]]
+
+preprocessed_df = preprocessed_df.drop(columns=['state','State'])
 # %%
 
 test_data = preprocessed_df[preprocessed_df['transaction_date']=='2020-05']
@@ -116,6 +144,13 @@ y_hat_val_proba = model.predict_proba(X_val)
 val_acc = accuracy_score(y_val, y_hat_val)
 
 feature_importances = model.feature_importances_
+
+
+# %%
+
+importances = list(zip(X_val.columns, feature_importances))
+
+#false_positive_val_data = 
 
 # %%
 # =============================================================================
