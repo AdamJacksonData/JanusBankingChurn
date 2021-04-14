@@ -71,14 +71,7 @@ train_acc = accuracy_score(y_train, y_hat_train)
 y_hat_val = model.predict(X_val)
 val_acc = accuracy_score(y_val, y_hat_val)
 
-mlflow.log_param('max_depth', md)
-mlflow.log_param('min_samples_leaf', msl)
-mlflow.log_param('learning_rate', lr)
-mlflow.log_metric('train_acc',train_acc)
-mlflow.log_metric('val_acc',val_acc)
-mlflow.sklearn.log_model(model, 'BankingChurnGBC')
-
-
+feature_importances = model.feature_importances_
 # %%
 
 
