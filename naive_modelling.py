@@ -33,6 +33,7 @@ Fed_Funds = pd.read_csv(os.getcwd() + r"/Federal_Funds.csv",parse_dates=['DATE']
 Treasury = pd.read_csv(os.getcwd() + r"/Treasury_Maturity_1M.csv",parse_dates=['DATE'], index_col='DATE')
 UMC_Sent = pd.read_csv(os.getcwd() + r"/UMC_Sentiment.csv",parse_dates=['DATE'], index_col='DATE')
 Unemp = pd.read_csv(os.getcwd() + r"/Unemployment.csv",parse_dates=['DATE'], index_col='DATE')
+CPI_data = pd.read_csv(os.getcwd() + r"/CPIAUCSL.csv",parse_dates=['DATE'], index_col='DATE')
 
 #&&
 Fed_Funds = Fed_Funds.resample('M').mean()
@@ -45,6 +46,9 @@ Treasury = Treasury.resample('M').mean()
 Treasury = Treasury.reset_index()
 Treasury['DATE'] = Treasury['DATE'].dt.to_period('M')
 
+CPI_data = CPI_data.reset_index()
+CPI_data['DATE'] = CPI_data['DATE'].dt.to_period('M')
+
 UMC_Sent = UMC_Sent.reset_index()
 UMC_Sent['DATE'] = UMC_Sent['DATE'].dt.to_period('M')
 
@@ -54,6 +58,7 @@ Unemp['DATE'] = Unemp['DATE'].dt.to_period('M')
 Extern = pd.merge(Fed_Funds,Treasury, on='DATE', how = 'outer' )
 Extern = pd.merge(Extern,UMC_Sent, on='DATE', how = 'outer' )
 Extern = pd.merge(Extern,Unemp, on='DATE', how = 'outer' )
+Extern = pd.merge(Extern,CPI_data, on='DATE', how = 'outer' )
 
 raw_data['transaction_date'] = raw_data['transaction_date'].values.astype('datetime64[M]')
 raw_data['transaction_date'] = raw_data['transaction_date'].dt.to_period('M')
