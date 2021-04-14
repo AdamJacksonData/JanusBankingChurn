@@ -26,6 +26,36 @@ from sklearn.calibration import calibration_curve
 file_path = os.getcwd() + r'/Aggregated_data.csv'
 raw_data = pd.read_csv(file_path)
 
+Fed_Funds = pd.read_csv(os.getcwd() + r"/Federal_Funds.csv",parse_dates=['DATE'], index_col='DATE')
+Treasury = pd.read_csv(os.getcwd() + r"/Treasury_Maturity_1M.csv",parse_dates=['DATE'], index_col='DATE')
+UMC_Sent = pd.read_csv(os.getcwd() + r"/UMC_Sentiment.csv",parse_dates=['DATE'], index_col='DATE')
+Unemp = pd.read_csv(os.getcwd() + r"/Unemployment.csv",parse_dates=['DATE'], index_col='DATE')
+
+#&&
+Fed_Funds = Fed_Funds.resample('M').mean()
+Fed_Funds = Fed_Funds.reset_index()
+Fed_Funds['DATE'] = Fed_Funds['DATE'].dt.to_period('M')
+
+Treasury.drop(Treasury.loc[Treasury['DGS1MO']=='.'].index, inplace=True)
+Treasury['DGS1MO'] = Treasury['DGS1MO'].astype(float)
+Treasury = Treasury.resample('M').mean()
+Treasury = Treasury.reset_index()
+Treasury['DATE'] = Treasury['DATE'].dt.to_period('M')
+
+UMC_Sent = UMC_Sent.reset_index()
+UMC_Sent['DATE'] = UMC_Sent['DATE'].dt.to_period('M')
+
+Unemp = Unemp.reset_index()
+Unemp['DATE'] = Unemp['DATE'].dt.to_period('M')
+ 
+Extern = pd.merge(Fed_Funds,Treasury, on='DATE', how = 'outer' )
+Extern = pd.merge(Extern,UMC_Sent, on='DATE', how = 'outer' )
+Extern = pd.merge(Extern,Unemp, on='DATE', how = 'outer' )
+
+raw_data['transaction_date'] = raw_data['transaction_date'].values.astype('datetime64[M]')
+raw_data['transaction_date'] = raw_data['transaction_date'].dt.to_period('M')
+raw_data = raw_data.join(Extern.set_index('DATE'), on ='transaction_date', how = 'left')
+
 # %%
 raw_data['end_date'] = pd.to_datetime('2020-05-31')
 raw_data['dob'] = pd.to_datetime(raw_data['dob'])
