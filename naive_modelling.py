@@ -23,7 +23,6 @@ from sklearn.calibration import calibration_curve
 import json
 import requests
 from bs4 import BeautifulSoup
-
 # %%
 
 file_path = os.getcwd() + r'/Aggregated_data.csv'
@@ -69,6 +68,33 @@ raw_data['end_date'] = pd.to_datetime('2020-05-31')
 raw_data['dob'] = pd.to_datetime(raw_data['dob'])
 raw_data['Age'] = (raw_data['end_date'] - raw_data['dob'])/np.timedelta64(1,'Y')
 raw_data['Age'] = raw_data['Age'].apply(np.floor)
+
+# %%
+# =============================================================================
+# Adding historical transaction features
+# =============================================================================
+
+# The following code counts the number of months with both positive and negative transactions for each customer.
+raw_data['number_of_months_with_negative_transactions'] = raw_data[raw_data['amount']<0].groupby(['customer_id']).cumcount() + 1
+raw_data['number_of_months_with_positive_transactions'] = raw_data[raw_data['amount']>0].groupby(['customer_id']).cumcount() + 1
+raw_data['cumulative_transactions_to_date']             = raw_data[['customer_id', 'amount']].groupby(['customer_id']).cumsum()
+raw_data['average_monthly_transactions_to_date']        = raw_data['cumulative_transactions_to_date'] / (raw_data['tenure'] + 1)
+raw_data[['number_of_months_with_negative_transactions', 'number_of_months_with_positive_transactions']] = raw_data[['customer_id', 'number_of_months_with_negative_transactions', 'number_of_months_with_positive_transactions']].groupby(['customer_id']).ffill()
+raw_data[['number_of_months_with_negative_transactions', 'number_of_months_with_positive_transactions']] = raw_data[['number_of_months_with_negative_transactions', 'number_of_months_with_positive_transactions']].fillna(value=0)
+
+# If no transactions happen in a given month it is labeled as an inactive month
+raw_data['inactive_month'] = 1 * (raw_data['amount'] == 0)
+raw_data['months_of_inactivity'] = raw_data['inactive_month'][raw_data['inactive_month']==0]
+
+# Keeps a running track of how many months an account has been inactive for. Resets upon new activity. This code takes ages to run though, so tryand just import raw_data.csv
+raw_data['months_of_inactivity'] = raw_data.groupby('customer_id')['inactive_month']                                                            \
+            .apply(lambda x: x * (x.groupby((x != x.shift()).cumsum()).cumcount() + 1))
+
+# If account has been inactive for 2 months, label account as IsInactive
+raw_data['IsInactive'] = raw_data['months_of_inactivity'].apply(lambda x: 0 if x < 2 else 1)
+
+# If account is empty, label account as IsAccountEmpty
+raw_data['IsAccountEmpty'] = raw_data['running_account_total'].apply(lambda x: 1 if abs(x)<1 else 0)
 
 
 # %%
