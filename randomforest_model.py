@@ -21,15 +21,17 @@ from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.tree import plot_tree
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_confusion_matrix
-from sklearn.metrics import roc_curve, roc_auc_score, plot_roc_curve, plot_precision_recall_curve
+from sklearn.metrics import roc_curve, roc_auc_score, plot_roc_curve, plot_precision_recall_curve, f1_score
 from sklearn.calibration import calibration_curve
 import json
+import shap
 import requests
 from bs4 import BeautifulSoup
+plt.rcParams.update({'font.size': 22})
 
 # %%
 
@@ -99,7 +101,7 @@ table_content = table_data[1:]
 
 location_df = pd.DataFrame(table_content, columns=table_cols)
 
-preprocessed_df = raw_data.drop(columns=['customer_id', 'deposit', 'withdrawal', 'dob', 'creation_date', 'account_id', 'end_date'])
+preprocessed_df = raw_data.drop(columns=['customer_id', 'deposit', 'withdrawal', 'dob', 'creation_date', 'account_id'])
 
 
 preprocessed_df = pd.merge(preprocessed_df, location_df, left_on='state', right_on='State', how='left')
@@ -124,10 +126,9 @@ train_val_data.drop(columns=['transaction_date','last_transaction'],inplace=True
 churners = train_val_data[train_val_data['churn']==1]
 matched_non_churners = train_val_data[train_val_data['churn']==0].sample(98764, random_state=123)
 
-train_val_data_matched = churners.append(matched_non_churners)
 # %%
 
-train_data, val_data = train_test_split(train_val_data_matched, test_size=0.2, stratify=train_val_data_matched['churn'], shuffle=True, random_state=123)
+train_data, val_data = train_test_split(train_val_data, test_size=0.2, stratify=train_val_data['churn'], shuffle=True, random_state=123)
 
 X_train = train_data.drop(columns='churn')
 y_train = train_data['churn']
@@ -169,7 +170,7 @@ importances = list(zip(X_val.columns, feature_importances))
 # Plotting confusion matrix
 # =============================================================================
 
-plot_confusion_matrix(model, X_val, y_val)
+plot_confusion_matrix(model, X_val, y_val).ax_.set_title('Confusion Matrix - Random Forest')
 
 # %%
 # =============================================================================
@@ -209,9 +210,12 @@ ax.set_ylabel('Proportion of positive observations')
 ax.grid()
 ax.set_xlim(0,1)
 ax.set_ylim(0,1)
-ax.set_title('Calibration Curve')
+ax.set_title('Calibration Curve - Random Forest')
 
-
+#%%
+explainer = shap.Explainer(model)
+shap_values = explainer(X_train)
+shap.plots.waterfall(shap_values[0])
 # %%
 
 
@@ -231,11 +235,53 @@ graph = graph_from_dot_data(dot_data)
 Image(graph.create_png())
 
 # %%
+params_grid = {
+    'n_estimators':[5,10,20],
+    'max_depth':[2,3,4,5, None]
+}
+
+cv=KFold(n_splits=10, shuffle=True, random_state=123)
+
+cv_grid = GridSearchCV(
+    estimator=RandomForestClassifier(random_state=123),
+    param_grid=params_grid,
+    cv=cv,
+    scoring='f1_weighted'
+)
+
+#%%
+cv_grid.fit(X_train, y_train)
+
+#%%
+results = cv_grid.cv_results_
+df_results = pd.DataFrame(results['params'])
+df_results['score'] = results['mean_test_score']
+print(df_results)
+
+print(cv_grid.best_params_)
+
+y_hat_val = cv_grid.best_estimator_.predict(X_val)
+
+acc_test = accuracy_score(y_val, y_hat_val)
+
+print('acc test:', acc_test)
+#%%
+model = RandomForestClassifier(random_state=123, **cv_grid.best_params_)
+model.fit(X_train, y_train)
+
+y_hat_val = model.predict(X_val)
 
 
+acc_test = accuracy_score(y_val, y_hat_val)
+print('acc test:', acc_test)
+
+df_importances = pd.DataFrame(zip(X_train.columns, model.feature_importances_),
+                              columns=['feature','importance'])
+
+df_importances.set_index('feature').plot.bar()
 
 
-
+f1 = f1_score(y_val, y_hat_val, average='macro')
 
 
 
