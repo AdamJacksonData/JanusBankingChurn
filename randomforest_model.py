@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.tree import plot_tree
@@ -35,43 +36,45 @@ plt.rcParams.update({'font.size': 22})
 
 # %%
 
-file_path = os.getcwd() + r'/Aggregated_data.csv'
-raw_data = pd.read_csv(file_path)
+file_path = os.getcwd() + r'/raw_data.csv'
+raw_data = pd.read_csv(file_path).drop(columns='Unnamed: 0')
 
-Fed_Funds = pd.read_csv(os.getcwd() + r"/Federal_Funds.csv",parse_dates=['DATE'], index_col='DATE')
-Treasury = pd.read_csv(os.getcwd() + r"/Treasury_Maturity_1M.csv",parse_dates=['DATE'], index_col='DATE')
-UMC_Sent = pd.read_csv(os.getcwd() + r"/UMC_Sentiment.csv",parse_dates=['DATE'], index_col='DATE')
-Unemp = pd.read_csv(os.getcwd() + r"/Unemployment.csv",parse_dates=['DATE'], index_col='DATE')
-CPI_data = pd.read_csv(os.getcwd() + r"/CPIAUCSL.csv",parse_dates=['DATE'], index_col='DATE')
-
-#&&
-Fed_Funds = Fed_Funds.resample('M').mean()
-Fed_Funds = Fed_Funds.reset_index()
-Fed_Funds['DATE'] = Fed_Funds['DATE'].dt.to_period('M')
-
-Treasury.drop(Treasury.loc[Treasury['DGS1MO']=='.'].index, inplace=True)
-Treasury['DGS1MO'] = Treasury['DGS1MO'].astype(float)
-Treasury = Treasury.resample('M').mean()
-Treasury = Treasury.reset_index()
-Treasury['DATE'] = Treasury['DATE'].dt.to_period('M')
-
-CPI_data = CPI_data.reset_index()
-CPI_data['DATE'] = CPI_data['DATE'].dt.to_period('M')
-
-UMC_Sent = UMC_Sent.reset_index()
-UMC_Sent['DATE'] = UMC_Sent['DATE'].dt.to_period('M')
-
-Unemp = Unemp.reset_index()
-Unemp['DATE'] = Unemp['DATE'].dt.to_period('M')
- 
-Extern = pd.merge(Fed_Funds,Treasury, on='DATE', how = 'outer' )
-Extern = pd.merge(Extern,UMC_Sent, on='DATE', how = 'outer' )
-Extern = pd.merge(Extern,Unemp, on='DATE', how = 'outer' )
-Extern = pd.merge(Extern,CPI_data, on='DATE', how = 'outer' )
+# =============================================================================
+# Fed_Funds = pd.read_csv(os.getcwd() + r"/Federal_Funds.csv",parse_dates=['DATE'], index_col='DATE')
+# Treasury = pd.read_csv(os.getcwd() + r"/Treasury_Maturity_1M.csv",parse_dates=['DATE'], index_col='DATE')
+# UMC_Sent = pd.read_csv(os.getcwd() + r"/UMC_Sentiment.csv",parse_dates=['DATE'], index_col='DATE')
+# Unemp = pd.read_csv(os.getcwd() + r"/Unemployment.csv",parse_dates=['DATE'], index_col='DATE')
+# CPI_data = pd.read_csv(os.getcwd() + r"/CPIAUCSL.csv",parse_dates=['DATE'], index_col='DATE')
+# 
+# #&&
+# Fed_Funds = Fed_Funds.resample('M').mean()
+# Fed_Funds = Fed_Funds.reset_index()
+# Fed_Funds['DATE'] = Fed_Funds['DATE'].dt.to_period('M')
+# 
+# Treasury.drop(Treasury.loc[Treasury['DGS1MO']=='.'].index, inplace=True)
+# Treasury['DGS1MO'] = Treasury['DGS1MO'].astype(float)
+# Treasury = Treasury.resample('M').mean()
+# Treasury = Treasury.reset_index()
+# Treasury['DATE'] = Treasury['DATE'].dt.to_period('M')
+# 
+# CPI_data = CPI_data.reset_index()
+# CPI_data['DATE'] = CPI_data['DATE'].dt.to_period('M')
+# 
+# UMC_Sent = UMC_Sent.reset_index()
+# UMC_Sent['DATE'] = UMC_Sent['DATE'].dt.to_period('M')
+# 
+# Unemp = Unemp.reset_index()
+# Unemp['DATE'] = Unemp['DATE'].dt.to_period('M')
+#  
+# Extern = pd.merge(Fed_Funds,Treasury, on='DATE', how = 'outer' )
+# Extern = pd.merge(Extern,UMC_Sent, on='DATE', how = 'outer' )
+# Extern = pd.merge(Extern,Unemp, on='DATE', how = 'outer' )
+# Extern = pd.merge(Extern,CPI_data, on='DATE', how = 'outer' )
+# =============================================================================
 
 raw_data['transaction_date'] = raw_data['transaction_date'].values.astype('datetime64[M]')
 raw_data['transaction_date'] = raw_data['transaction_date'].dt.to_period('M')
-raw_data = raw_data.join(Extern.set_index('DATE'), on ='transaction_date', how = 'left')
+# raw_data = raw_data.join(Extern.set_index('DATE'), on ='transaction_date', how = 'left')
 
 # %%
 raw_data['end_date'] = pd.to_datetime('2020-05-31')
@@ -101,7 +104,7 @@ table_content = table_data[1:]
 
 location_df = pd.DataFrame(table_content, columns=table_cols)
 
-preprocessed_df = raw_data.drop(columns=['customer_id', 'deposit', 'withdrawal', 'dob', 'creation_date', 'account_id'])
+preprocessed_df = raw_data.drop(columns=['customer_id', 'deposit', 'withdrawal', 'dob', 'creation_date', 'account_id', 'end_date'])
 
 
 preprocessed_df = pd.merge(preprocessed_df, location_df, left_on='state', right_on='State', how='left')
@@ -130,6 +133,7 @@ matched_non_churners = train_val_data[train_val_data['churn']==0].sample(98764, 
 
 train_data, val_data = train_test_split(train_val_data, test_size=0.2, stratify=train_val_data['churn'], shuffle=True, random_state=123)
 
+
 X_train = train_data.drop(columns='churn')
 y_train = train_data['churn']
 X_val = val_data.drop(columns='churn')
@@ -138,8 +142,8 @@ y_val = val_data['churn']
 # %%
 
 scaler=StandardScaler()
-X_train = pd.DataFrame(scaler.fit_transform(X_train),columns=X_train.columns)
-X_val = pd.DataFrame(scaler.transform(X_val),columns=X_val.columns)
+X_train = pd.DataFrame(scaler.fit_transform(X_train),index=X_train.index, columns=X_train.columns)
+X_val = pd.DataFrame(scaler.transform(X_val),index=X_val.index, columns=X_val.columns)
 
 # %%
         
@@ -172,6 +176,7 @@ importances = list(zip(X_val.columns, feature_importances))
 
 plot_confusion_matrix(model, X_val, y_val).ax_.set_title('Confusion Matrix - Random Forest')
 
+
 # %%
 # =============================================================================
 # Plotting ROC curve
@@ -192,6 +197,7 @@ plot_roc_curve(model, X_val, y_val)
 # =============================================================================
 
 plot_precision_recall_curve(model, X_val, y_val)
+
 
 # %%
 # =============================================================================
